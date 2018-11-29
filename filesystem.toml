@@ -98,6 +98,7 @@ uutils = {}
 #vttest = {}
 #xz = {}
 zerod = {}
+canary = {}
 
 # User settings
 [users.root]
