@@ -24,4 +24,5 @@ redoxfs --uuid $REDOXFS_UUID file
 cd file:
 export PATH file:/bin
 run.d /etc/init.d
+canary
 """
