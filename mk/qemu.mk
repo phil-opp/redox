@@ -1,7 +1,7 @@
 QEMU=SDL_VIDEO_X11_DGAMOUSE=0 qemu-system-$(ARCH)
 QEMU=SDL_VIDEO_X11_DGAMOUSE=0 /home/philipp/Documents/qemu/build/x86_64-softmmu/qemu-system-$(ARCH)
 QEMUFLAGS=-serial mon:stdio -d cpu_reset -d guest_errors
-QEMUFLAGS+=-smp 4 -m 2048
+QEMUFLAGS+=-smp 1 -m 2048
 QEMUFLAGS+=-qmp unix:./qmp-socket,server,nowait
 ifeq ($(iommu),yes)
 	QEMUFLAGS+=-machine q35,iommu=on
