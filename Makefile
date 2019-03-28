@@ -3,6 +3,8 @@ include mk/config.mk
 
 all: build/harddrive.bin
 
+coreboot: build/coreboot.elf
+
 live: build/livedisk.bin
 
 iso: build/livedisk.iso
@@ -18,7 +20,7 @@ clean:
 	rm -rf build
 
 distclean:
-	make clean
+	$(MAKE) clean
 	cd cookbook && ./unfetch.sh
 
 pull:
@@ -60,13 +62,19 @@ include mk/virtualbox.mk
 
 # CI image target
 ci-img: FORCE
-	make INSTALLER_FLAGS= build/harddrive.bin.gz build/livedisk.iso #build/harddrive-efi.bin.gz build/livedisk-efi.iso
+	$(MAKE) INSTALLER_FLAGS= \
+		build/coreboot.elf.gz \
+		build/harddrive.bin.gz \
+		build/livedisk.iso.gz \
+		build/harddrive-efi.bin.gz \
+		build/livedisk-efi.iso.gz
 	rm -rf build/img
-	mkdir build/img
-	mv build/harddrive.bin.gz build/img/redox_$(IMG_TAG)_harddrive.bin.gz
-	mv build/livedisk.iso build/img/redox_$(IMG_TAG)_livedisk.iso
-	#mv build/harddrive-efi.bin.gz build/img/redox_$(IMG_TAG)_harddrive-efi.bin.gz
-	#mv build/livedisk-efi.iso build/img/redox_$(IMG_TAG)_livedisk-efi.iso
+	mkdir -p build/img
+	cp "build/coreboot.elf.gz" "build/img/redox_$(IMG_TAG)_coreboot.elf.gz"
+	cp "build/harddrive.bin.gz" "build/img/redox_$(IMG_TAG)_harddrive.bin.gz"
+	cp "build/livedisk.iso.gz" "build/img/redox_$(IMG_TAG)_livedisk.iso.gz"
+	cp "build/harddrive-efi.bin.gz" "build/img/redox_$(IMG_TAG)_harddrive-efi.bin.gz"
+	cp "build/livedisk-efi.iso.gz" "build/img/redox_$(IMG_TAG)_livedisk-efi.iso.gz"
 	cd build/img && sha256sum -b * > SHA256SUM
 
 # CI packaging target
@@ -77,12 +85,32 @@ ci-pkg: prefix FORCE
 	./fetch.sh "$${PACKAGES}" && \
 	./repo.sh "$${PACKAGES}"
 
+# CI toolchain
+ci-toolchain: FORCE
+	$(MAKE) PREFIX_BINARY=0 \
+		"prefix/$(TARGET)/gcc-install.tar.gz" \
+		"prefix/$(TARGET)/relibc-install.tar.gz"
+	rm -rf build/toolchain
+	mkdir -p "build/toolchain/$(TARGET)"
+	cp "prefix/$(TARGET)/gcc-install.tar.gz" "build/toolchain/$(TARGET)/gcc-install.tar.gz"
+	cp "prefix/$(TARGET)/relibc-install.tar.gz" "build/toolchain/$(TARGET)/relibc-install.tar.gz"
+	cd "build/toolchain/$(TARGET)" && sha256sum -b * > SHA256SUM
+
+env: prefix FORCE
+	export PATH="$(PREFIX_PATH):$$PATH" && \
+	bash
+
 # An empty target
 FORCE:
 
-# A method of creating a listing for any binary
+# Gzip any binary
+%.gz: %
+	gzip -k -f $<
+
+# Create a listing for any binary
 %.list: %
-	objdump -C -M intel -D $< > $@
+	export PATH="$(PREFIX_PATH):$$PATH" && \
+	$(OBJDUMP) -C -M intel -D $< > $@
 
 # Wireshark
 wireshark: FORCE

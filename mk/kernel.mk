@@ -1,27 +1,43 @@
 build/libkernel.a: kernel/Cargo.lock kernel/Cargo.toml kernel/src/* kernel/src/*/* kernel/src/*/*/* kernel/src/*/*/*/* build/initfs.tag
-# Temporary fix for https://gitlab.redox-os.org/redox-os/redox/issues/963 allowing to build on macOS
-ifeq ($(UNAME),Darwin)
-	cd kernel && CC=$(ARCH)-elf-gcc AR=$(ARCH)-elf-ar CFLAGS=-ffreestanding INITFS_FOLDER=$(ROOT)/build/initfs xargo rustc --lib --target $(KTARGET) --release -- -C soft-float -C debuginfo=2 --emit link=../$@
-else
-	cd kernel && INITFS_FOLDER=$(ROOT)/build/initfs xargo rustc --lib --target $(KTARGET) --release -- -C soft-float -C debuginfo=2 --emit link=../$@
-endif
+	export PATH="$(PREFIX_PATH):$$PATH" && \
+	export INITFS_FOLDER=$(ROOT)/build/initfs && \
+	cd kernel && \
+	xargo rustc --lib --target $(KTARGET) --release -- -C soft-float -C debuginfo=2 -C lto --emit link=../$@
+
+build/libkernel_coreboot.a: kernel/Cargo.toml kernel/src/* kernel/src/*/* kernel/src/*/*/* kernel/src/*/*/*/* build/initfs_coreboot.tag
+	export PATH="$(PREFIX_PATH):$$PATH" && \
+	export INITFS_FOLDER=$(ROOT)/build/initfs_coreboot && \
+	cd kernel && \
+	xargo rustc --lib --target $(KTARGET) --release --features live -- -C soft-float -C debuginfo=2 -C lto --emit link=../$@
 
 build/libkernel_live.a: kernel/Cargo.toml kernel/src/* kernel/src/*/* kernel/src/*/*/* kernel/src/*/*/*/* build/initfs_live.tag
-	cd kernel && INITFS_FOLDER=$(ROOT)/build/initfs_live xargo rustc --lib --features live --target $(KTARGET) --release -- -C soft-float --emit link=../$@
+	export PATH="$(PREFIX_PATH):$$PATH" && \
+	export INITFS_FOLDER=$(ROOT)/build/initfs_live && \
+	cd kernel && \
+	xargo rustc --lib --target $(KTARGET) --release --features live -- -C soft-float -C debuginfo=2 -C lto --emit link=../$@
 
 build/kernel: kernel/linkers/$(ARCH).ld build/libkernel.a
-	$(LD) --gc-sections -z max-page-size=0x1000 -T $< -o $@ build/libkernel.a
-	objcopy --only-keep-debug $@ $@.sym
-	objcopy --strip-debug $@
+	export PATH="$(PREFIX_PATH):$$PATH" && \
+	$(LD) --gc-sections -z max-page-size=0x1000 -T $< -o $@ build/libkernel.a && \
+	$(OBJCOPY) --only-keep-debug $@ $@.sym && \
+	$(OBJCOPY) --strip-debug $@
+
+build/kernel_coreboot: kernel/linkers/$(ARCH).ld build/libkernel_coreboot.a build/live.o
+	export PATH="$(PREFIX_PATH):$$PATH" && \
+	$(LD) --gc-sections -z max-page-size=0x1000 -T $< -o $@ build/libkernel_coreboot.a build/live.o && \
+	$(OBJCOPY) --only-keep-debug $@ $@.sym && \
+	$(OBJCOPY) --strip-debug $@
 
 build/kernel_live: kernel/linkers/$(ARCH).ld build/libkernel_live.a build/live.o
-	$(LD) --gc-sections -z max-page-size=0x1000 -T $< -o $@ build/libkernel_live.a build/live.o
-	objcopy --only-keep-debug $@ $@.sym
-	objcopy --strip-debug $@
+	export PATH="$(PREFIX_PATH):$$PATH" && \
+	$(LD) --gc-sections -z max-page-size=0x1000 -T $< -o $@ build/libkernel_live.a build/live.o && \
+	$(OBJCOPY) --only-keep-debug $@ $@.sym && \
+	$(OBJCOPY) --strip-debug $@
 
 build/live.o: build/filesystem.bin
 	#TODO: More general use of $(ARCH)
-	objcopy -I binary -O elf64-x86-64 -B i386:x86-64 $< $@ \
+	export PATH="$(PREFIX_PATH):$$PATH" && \
+	$(OBJCOPY) -I binary -O elf64-x86-64 -B i386:x86-64 $< $@ \
 		--redefine-sym _binary_build_filesystem_bin_start=__live_start \
 		--redefine-sym _binary_build_filesystem_bin_end=__live_end \
 		--redefine-sym _binary_build_filesystem_bin_size=__live_size

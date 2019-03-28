@@ -142,7 +142,7 @@ osx_homebrew()
 archLinux()
 {
 	echo "Detected Arch Linux"
-	packages="cmake fuse git gperf perl-html-parser nasm wget"
+	packages="cmake fuse git gperf perl-html-parser nasm wget texinfo bison flex yacc"
 	if [ "$1" == "qemu" ]; then
 		packages="$packages qemu"
 	elif [ "$1" == "virtualbox" ]; then
@@ -168,7 +168,7 @@ ubuntu()
 	echo "Updating system..."
 	sudo "$2" update
 	echo "Installing required packages..."
-	sudo "$2" install build-essential libc6-dev-i386 nasm curl file git libfuse-dev fuse pkg-config cmake autopoint autoconf libtool m4 syslinux-utils genisoimage flex bison gperf libpng-dev libhtml-parser-perl
+	sudo "$2" install build-essential libc6-dev-i386 nasm curl file git libfuse-dev fuse pkg-config cmake autopoint autoconf libtool m4 syslinux-utils genisoimage flex bison gperf libpng-dev libhtml-parser-perl texinfo
 	if [ "$1" == "qemu" ]; then
 		if [ -z "$(which qemu-system-x86_64)" ]; then
 			echo "Installing QEMU..."
@@ -214,7 +214,7 @@ fedora()
 		fi
 	fi
 	# Use rpm -q <package> to check if it's already installed
-	PKGS=$(for pkg in gcc gcc-c++ glibc-devel.i686 nasm make fuse-devel cmake; do rpm -q $pkg > /dev/null; [ $? -ne 0 ] && echo $pkg; done)
+	PKGS=$(for pkg in gcc gcc-c++ glibc-devel.i686 nasm make fuse-devel cmake texinfo; do rpm -q $pkg > /dev/null; [ $? -ne 0 ] && echo $pkg; done)
 	# If the list of packages is not empty, install missing
 	COUNT=$(echo $PKGS | wc -w)
 	if [ $COUNT -ne 0 ]; then
