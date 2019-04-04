@@ -8,8 +8,8 @@
 	branch = master
 [submodule "cookbook"]
 	path = cookbook
-	url = https://gitlab.redox-os.org/redox-os/cookbook.git
-	branch = master
+	url = https://github.com/phil-opp/redox-cookbook/tree/canary
+	branch = master-thesis
 [submodule "installer"]
 	path = installer
 	url = https://gitlab.redox-os.org/redox-os/installer.git
@@ -20,8 +20,8 @@
 	branch = master
 [submodule "kernel"]
 	path = kernel
-	url = https://gitlab.redox-os.org/redox-os/kernel.git
-	branch = master
+	url = https://github.com/phil-opp/redox-kernel.git
+	branch = master-thesis
 [submodule "rust"]
 	path = rust
 	url = https://gitlab.redox-os.org/redox-os/rust.git
